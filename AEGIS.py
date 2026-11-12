@@ -984,27 +984,37 @@ def planejador_cidadao():
 
 
 def rede_cidadao():
-    cabecalho("Rede de regiões", "Explore visualmente as conexões simuladas entre regiões do AEGIS.")
+    cabecalho("Rede de regiões", "Escolha um destino de saúde para ver o trajeto a partir da sua residência.")
     conceito_aplicado("GRAFOS · BFS E DFS",
-        "O AEGIS representa regiões como vértices e ligações como arestas. "
-        "A busca em largura (BFS) destaca no grafo o caminho com menos conexões entre dois locais, "
-        "enquanto a busca em profundidade (DFS) permite explorar os setores alcançáveis.")
-    st.info("Esta rede é fictícia e não representa um mapa, transporte público ou unidades reais de saúde.")
-    grafo = dados["grafo"]
-    origem_padrao = usuario["bairro"] if usuario["bairro"] in grafo else "Centro de Operações"
-    col1, col2 = st.columns(2)
-    origem = col1.selectbox("Região de partida", list(grafo), index=list(grafo).index(origem_padrao),
-                            key="origem_cidadao")
-    destino = col2.selectbox("Região de destino", [no for no in grafo if no != origem],
-                             key="destino_cidadao")
+        "A residência e os destinos são os vértices, e as ligações entre eles são as arestas. "
+        "A busca em largura (BFS) encontra o trajeto com menos trechos até o destino. "
+        "A busca em profundidade (DFS) mostra outra ordem de visita aos pontos da rede.")
+    origem = "Residência do cidadão"
+    grafo = {
+        origem: ["Farmácia do Bairro", "UBS do Bairro"],
+        "Farmácia do Bairro": [origem, "Farmácia Central"],
+        "UBS do Bairro": [origem, "UPA Regional", "Laboratório"],
+        "UPA Regional": ["UBS do Bairro", "Hospital Municipal"],
+        "Hospital Municipal": ["UPA Regional", "Laboratório"],
+        "Farmácia Central": ["Farmácia do Bairro", "Laboratório"],
+        "Laboratório": ["UBS do Bairro", "Farmácia Central", "Hospital Municipal"],
+    }
+    st.info("Rede demonstrativa com destinos fictícios.")
+    st.write(f"**Partida fixa:** {origem} · {usuario['bairro']}")
+    destino = st.selectbox("Destino de saúde", [ponto for ponto in grafo if ponto != origem],
+                           key="destino_saude_cidadao")
     caminho = desenho_grafo(grafo, origem, destino, "cidadao")
-    st.success(f"Menor caminho BFS: {len(caminho)-1} conexões" if caminho else "Não há conexão entre esses pontos.")
+    if caminho:
+        st.success(f"Menor trajeto (BFS) · {' → '.join(caminho)}")
+        st.caption(f"Total de trechos: {len(caminho) - 1}")
+    else:
+        st.warning("Não há conexão entre a residência e esse destino.")
     c1, c2 = st.columns(2)
     with c1:
-        with st.expander("Ver percurso completo da BFS"):
+        with st.expander("Ver ordem de visita da BFS"):
             st.write(" → ".join(backend.busca_largura(grafo, origem)))
     with c2:
-        with st.expander("Ver percurso completo da DFS"):
+        with st.expander("Ver ordem de visita da DFS"):
             st.write(" → ".join(backend.busca_profundidade(grafo, origem)))
     st.caption("Complexidade de BFS e DFS: O(V + E). As posições dos nós foram criadas apenas para visualização.")
 
