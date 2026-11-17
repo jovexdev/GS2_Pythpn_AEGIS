@@ -1,5 +1,5 @@
 streamlit==1.67.0
-pandas
+pandas==3.0.5
 requests
 networkx
 plotly
